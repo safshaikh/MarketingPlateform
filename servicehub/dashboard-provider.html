@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Dashboard - ServiceHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">ServiceHub</div>
+        <div class="nav-links">
+            <a href="dashboard-provider.html" class="active">Dashboard</a>
+            <a href="bookings.html">Bookings</a>
+            <a href="profile.html">Profile</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="dashboard-provider.html" class="active"><i class="fas fa-tachometer-alt"></i> Overview</a></li>
+                <li><a href="bookings.html"><i class="fas fa-calendar-check"></i> Bookings</a></li>
+                <li><a href="profile.html"><i class="fas fa-user"></i> Profile</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="welcome-section mb-4">
+                <h2>Welcome, <span id="providerName">Provider</span>!</h2>
+                <p class="text-light">Manage your services and bookings.</p>
+            </div>
+
+            <!-- Overview -->
+            <section id="overview">
+                <h3 class="mb-4">At a Glance</h3>
+                <div class="grid-container">
+                    <div class="card text-center">
+                        <i class="fas fa-wallet fa-2x mb-2 text-primary"></i>
+                        <h4>Total Earnings</h4>
+                        <p id="totalEarnings" class="service-price">$0.00</p>
+                    </div>
+                    <div class="card text-center">
+                        <i class="fas fa-clock fa-2x mb-2 text-primary"></i>
+                        <h4>Pending Bookings</h4>
+                        <p id="pendingBookings" class="service-price">0</p>
+                    </div>
+                    <div class="card text-center">
+                        <i class="fas fa-star fa-2x mb-2 text-primary"></i>
+                        <h4>Average Rating</h4>
+                        <p id="averageRating" class="service-price">N/A</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- My Services -->
+            <section id="services" class="mt-4">
+                <div class="flex-between mb-4">
+                    <h3>My Services</h3>
+                    <button id="openAddServiceModal" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Add New Service
+                    </button>
+                </div>
+
+                <div id="myServicesList" class="grid-container mb-4">
+                    <!-- Provider's services will be loaded here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Service Modal -->
+    <div id="addServiceModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Add New Service</h3>
+            <form id="addServiceForm">
+                <div class="form-group">
+                    <label>Service Name</label>
+                    <input type="text" id="serviceName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="serviceCategory" class="form-control">
+                        <option>Cleaning</option>
+                        <option>Plumbing</option>
+                        <option>Electrician</option>
+                        <option>Beauty</option>
+                        <option>Gardening</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="serviceDescription" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Price ($)</label>
+                    <input type="number" id="servicePrice" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Image URL (Optional)</label>
+                    <input type="url" id="serviceImage" class="form-control" placeholder="https://example.com/image.jpg">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Add Service</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/booking.js"></script>
+    <script>
+        const user = Auth.getCurrentUser();
+        if (user) {
+            document.getElementById('providerName').innerText = user.name;
+        }
+
+        // Load Provider-specific data
+        function loadProviderDashboard() {
+            if (!user) return;
+
+            const services = JSON.parse(localStorage.getItem('services')) || [];
+            const bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+            const ratings = JSON.parse(localStorage.getItem('ratings')) || [];
+
+            const myServices = services.filter(s => s.providerId === user.id);
+            const myBookings = bookings.filter(b => b.providerId === user.id);
+            const myRatings = ratings.filter(r => r.providerId === user.id);
+
+            // Overview Stats
+            const totalEarnings = myBookings
+                .filter(b => b.status === 'completed')
+                .reduce((sum, b) => sum + b.price, 0);
+
+            const pendingBookings = myBookings.filter(b => b.status === 'pending').length;
+
+            const avgRating = myRatings.length > 0
+                ? (myRatings.reduce((sum, r) => sum + r.rating, 0) / myRatings.length).toFixed(1)
+                : 'N/A';
+
+            document.getElementById('totalEarnings').innerText = App.formatCurrency(totalEarnings);
+            document.getElementById('pendingBookings').innerText = pendingBookings;
+            document.getElementById('averageRating').innerText = avgRating;
+
+            // Load My Services
+            const servicesContainer = document.getElementById('myServicesList');
+            servicesContainer.innerHTML = '';
+
+            if (myServices.length === 0) {
+                servicesContainer.innerHTML = '<p class="text-muted">You haven\'t added any services yet.</p>';
+            }
+
+            myServices.forEach(service => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const imgSrc = service.image || 'https://via.placeholder.com/300x200?text=Service';
+
+                card.innerHTML = `
+                    <img src="${imgSrc}" alt="${service.name}" class="service-img">
+                    <h4>${service.name}</h4>
+                    <p class="text-light mb-2">${service.category}</p>
+                    <div class="flex-between mt-auto">
+                        <span class="service-price">${App.formatCurrency(service.price)}</span>
+                        <span class="rating-stars">★ ${service.rating || 'N/A'}</span>
+                    </div>
+                `;
+                servicesContainer.appendChild(card);
+            });
+        }
+
+        // Modal Logic for Add Service
+        const addServiceModal = document.getElementById('addServiceModal');
+        const openAddServiceBtn = document.getElementById('openAddServiceModal');
+
+        openAddServiceBtn.addEventListener('click', () => {
+            addServiceModal.classList.add('active');
+        });
+
+        // Add New Service
+        document.getElementById('addServiceForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!user) return;
+
+            const newService = {
+                id: App.generateId(),
+                providerId: user.id,
+                providerName: user.name,
+                category: document.getElementById('serviceCategory').value,
+                name: document.getElementById('serviceName').value,
+                description: document.getElementById('serviceDescription').value,
+                price: parseFloat(document.getElementById('servicePrice').value),
+                image: document.getElementById('serviceImage').value || 'https://via.placeholder.com/300x200?text=Service',
+                rating: 0,
+                reviews: 0
+            };
+
+            const services = JSON.parse(localStorage.getItem('services')) || [];
+            services.push(newService);
+            localStorage.setItem('services', JSON.stringify(services));
+
+            App.showToast('Service added successfully!', 'success');
+            e.target.reset();
+            addServiceModal.classList.remove('active');
+            loadProviderDashboard();
+        });
+
+        // Initial Load
+        loadProviderDashboard();
+    </script>
+</body>
+</html>

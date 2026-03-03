@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - ServiceHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">ServiceHub</div>
+        <div class="nav-links">
+            <a href="dashboard-customer.html" class="active">Dashboard</a>
+            <a href="bookings.html">My Bookings</a>
+            <a href="profile.html">Profile</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="dashboard-customer.html" class="active"><i class="fas fa-home"></i> Overview</a></li>
+                <li><a href="bookings.html"><i class="fas fa-calendar-alt"></i> My Bookings</a></li>
+                <li><a href="profile.html"><i class="fas fa-user"></i> Profile</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="welcome-section mb-4">
+                <h2>Welcome back, <span id="userName">User</span>!</h2>
+                <p class="text-light">Find and book the best services near you.</p>
+            </div>
+
+            <!-- Pending Reviews Section -->
+            <section id="pendingReviews" class="mb-4">
+                <h3 class="mb-4">Pending Reviews</h3>
+                <div id="pendingReviewsList" class="grid-container">
+                    <!-- Pending reviews will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Search & Filter -->
+            <div class="search-filter mb-4 flex-between">
+                <input type="text" id="searchService" class="form-control" placeholder="Search services..." style="max-width: 300px;">
+                <select id="categoryFilter" class="form-control" style="max-width: 200px;">
+                    <option value="all">All Categories</option>
+                    <option value="Cleaning">Cleaning</option>
+                    <option value="Plumbing">Plumbing</option>
+                    <option value="Electrician">Electrician</option>
+                    <option value="Beauty">Beauty</option>
+                    <option value="Gardening">Gardening</option>
+                </select>
+            </div>
+
+            <!-- Services Grid -->
+            <h3 class="mb-4">Available Services</h3>
+            <div id="servicesGrid" class="grid-container mb-4">
+                <!-- Services will be loaded here dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Multi-Step Booking Modal -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+
+            <!-- Step 1: Booking Details -->
+            <div id="step-details" class="step-content active">
+                <h3>Book Service</h3>
+                <form id="bookingForm">
+                    <input type="hidden" id="serviceId">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="bookingDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Time</label>
+                        <input type="time" id="bookingTime" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea id="bookingAddress" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <button type="button" id="toPaymentBtn" class="btn btn-primary w-100">Proceed to Payment</button>
+                </form>
+            </div>
+
+            <!-- Step 2: Payment -->
+            <div id="step-payment" class="step-content">
+                <h3><i class="fas fa-lock text-primary"></i> Secure Payment</h3>
+
+                <div class="invoice-box mb-4">
+                    <div class="flex-between">
+                        <span>Service:</span>
+                        <strong id="summaryServiceName">Service Name</strong>
+                    </div>
+                    <div class="flex-between mt-2">
+                        <span>Total:</span>
+                        <strong id="summaryServicePrice" class="text-primary">$0.00</strong>
+                    </div>
+                </div>
+
+                <label class="mb-2 d-block">Select Payment Method</label>
+                <div class="payment-methods">
+                    <div class="payment-option selected" data-method="card">
+                        <i class="fas fa-credit-card"></i>
+                        <div>Card</div>
+                    </div>
+                    <div class="payment-option" data-method="upi">
+                        <i class="fas fa-mobile-alt"></i>
+                        <div>UPI</div>
+                    </div>
+                    <div class="payment-option" data-method="wallet">
+                        <i class="fas fa-wallet"></i>
+                        <div>Wallet</div>
+                    </div>
+                </div>
+
+                <div class="secure-badge mb-4">
+                    <i class="fas fa-shield-alt"></i> Your payment is 100% secure and encrypted.
+                </div>
+
+                <div class="flex-between gap-2">
+                    <button type="button" id="backToDetailsBtn" class="btn btn-outline w-50">Back</button>
+                    <button type="button" id="confirmPaymentBtn" class="btn btn-primary w-50">Pay <span id="payAmount">$0.00</span></button>
+                </div>
+            </div>
+
+            <!-- Step 3: Success -->
+            <div id="step-success" class="step-content text-center">
+                <div class="success-animation">
+                    <div class="checkmark-circle">
+                        <i class="fas fa-check checkmark"></i>
+                    </div>
+                    <h3>Payment Successful!</h3>
+                    <p class="text-muted">Your booking has been confirmed.</p>
+                </div>
+
+                <div class="invoice-box">
+                    <div class="flex-between">
+                        <span>Invoice ID:</span>
+                        <strong id="invoiceId">#INV-000</strong>
+                    </div>
+                    <div class="flex-between mt-2">
+                        <span>Date:</span>
+                        <span id="invoiceDate">Oct 24, 2023</span>
+                    </div>
+                    <div class="flex-between mt-2">
+                        <span>Amount Paid:</span>
+                        <strong id="invoiceAmount" class="text-success">$0.00</strong>
+                    </div>
+                </div>
+
+                <button onclick="Booking.downloadInvoice()" class="btn btn-outline w-100 mb-2">
+                    <i class="fas fa-download"></i> Download Invoice
+                </button>
+                <button onclick="window.location.href='bookings.html'" class="btn btn-primary w-100">
+                    View My Bookings
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Rate Service</h3>
+            <form id="ratingForm">
+                <input type="hidden" id="ratingBookingId">
+                <div class="form-group">
+                    <label>Rating</label>
+                    <div class="rating-stars">
+                        <input type="radio" name="rating" value="5" id="star5"><label for="star5">★</label>
+                        <input type="radio" name="rating" value="4" id="star4"><label for="star4">★</label>
+                        <input type="radio" name="rating" value="3" id="star3"><label for="star3">★</label>
+                        <input type="radio" name="rating" value="2" id="star2"><label for="star2">★</label>
+                        <input type="radio" name="rating" value="1" id="star1"><label for="star1">★</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comment</label>
+                    <textarea id="ratingComment" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/booking.js"></script>
+    <script src="js/rating.js"></script>
+    <script>
+        const user = Auth.getCurrentUser();
+        if (user) {
+            document.getElementById('userName').innerText = user.name;
+        }
+
+        // Helper: Get Service Image
+        function getServiceImage(serviceId) {
+            const services = JSON.parse(localStorage.getItem('services')) || [];
+            const service = services.find(s => s.id === serviceId);
+            return service ? (service.image || 'https://via.placeholder.com/300x200?text=Service') : 'https://via.placeholder.com/300x200?text=Service';
+        }
+
+        // Load Pending Reviews
+        function loadPendingReviews() {
+            if (!user) return;
+            const bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+            const ratings = JSON.parse(localStorage.getItem('ratings')) || [];
+            const ratedBookingIds = ratings.map(r => r.bookingId);
+
+            const pending = bookings.filter(b =>
+                b.customerId === user.id &&
+                b.status === 'completed' &&
+                !ratedBookingIds.includes(b.id)
+            );
+
+            const container = document.getElementById('pendingReviewsList');
+            container.innerHTML = '';
+
+            if (pending.length === 0) {
+                document.getElementById('pendingReviews').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('pendingReviews').style.display = 'block';
+            pending.forEach(booking => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const imgSrc = getServiceImage(booking.serviceId);
+
+                card.innerHTML = `
+                    <div class="review-card-layout">
+                        <img src="${imgSrc}" alt="${booking.serviceName}" class="review-card-img">
+                        <div style="flex-grow: 1;">
+                            <h5 class="mb-1">${booking.serviceName}</h5>
+                            <p class="text-muted text-sm">Completed on ${App.formatDate(booking.createdAt)}</p>
+                        </div>
+                        <button onclick="Rating.openRateModal('${booking.id}')" class="btn btn-primary btn-sm">Rate Now</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Load Services
+        function loadServices() {
+            const services = JSON.parse(localStorage.getItem('services')) || [];
+            const container = document.getElementById('servicesGrid');
+            const filter = document.getElementById('categoryFilter').value;
+            const search = document.getElementById('searchService').value.toLowerCase();
+
+            container.innerHTML = '';
+
+            const filteredServices = services.filter(s => {
+                const matchesCategory = filter === 'all' || s.category === filter;
+                const matchesSearch = s.name.toLowerCase().includes(search) || s.description.toLowerCase().includes(search);
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filteredServices.length === 0) {
+                container.innerHTML = '<p class="text-muted">No services found.</p>';
+                return;
+            }
+
+            filteredServices.forEach(service => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const imgSrc = service.image || 'https://via.placeholder.com/300x200?text=Service';
+
+                card.innerHTML = `
+                    <img src="${imgSrc}" alt="${service.name}" class="service-img">
+                    <h4>${service.name}</h4>
+                    <p class="text-light text-sm mb-2">${service.category}</p>
+                    <p class="text-muted" style="flex-grow: 1;">${service.description}</p>
+                    <div class="flex-between mt-4">
+                        <span class="service-price">${App.formatCurrency(service.price)}</span>
+                        <span class="rating-stars">★ ${service.rating} (${service.reviews})</span>
+                    </div>
+                    <button onclick="Booking.openBookingModal('${service.id}')" class="btn btn-primary w-100 mt-4">Book Now</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Initial Load
+        loadPendingReviews();
+        loadServices();
+
+        // Event Listeners for Filter/Search
+        document.getElementById('categoryFilter').addEventListener('change', loadServices);
+        document.getElementById('searchService').addEventListener('input', loadServices);
+    </script>
+</body>
+</html>

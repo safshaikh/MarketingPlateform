@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - ServiceHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">ServiceHub</div>
+        <div class="nav-links">
+            <a href="dashboard-customer.html">Dashboard</a>
+            <a href="bookings.html" class="active">My Bookings</a>
+            <a href="profile.html">Profile</a>
+            <a href="#" id="logoutBtn">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="dashboard-customer.html"><i class="fas fa-home"></i> Overview</a></li>
+                <li><a href="bookings.html" class="active"><i class="fas fa-calendar-alt"></i> My Bookings</a></li>
+                <li><a href="profile.html"><i class="fas fa-user"></i> Profile</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <h2 class="mb-4">My Bookings</h2>
+
+            <!-- Filter Tabs -->
+            <div class="mb-4">
+                <button class="btn btn-outline btn-sm active" onclick="filterBookings('all')">All</button>
+                <button class="btn btn-outline btn-sm" onclick="filterBookings('pending')">Pending</button>
+                <button class="btn btn-outline btn-sm" onclick="filterBookings('accepted')">Accepted</button>
+                <button class="btn btn-outline btn-sm" onclick="filterBookings('completed')">Completed</button>
+                <button class="btn btn-outline btn-sm" onclick="filterBookings('cancelled')">Cancelled</button>
+            </div>
+
+            <div id="bookingsList" class="grid-container">
+                <!-- Bookings will be loaded here dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Rate Service</h3>
+            <form id="ratingForm">
+                <input type="hidden" id="ratingBookingId">
+                <div class="form-group">
+                    <label>Rating</label>
+                    <div class="rating-stars">
+                        <input type="radio" name="rating" value="5" id="star5"><label for="star5">★</label>
+                        <input type="radio" name="rating" value="4" id="star4"><label for="star4">★</label>
+                        <input type="radio" name="rating" value="3" id="star3"><label for="star3">★</label>
+                        <input type="radio" name="rating" value="2" id="star2"><label for="star2">★</label>
+                        <input type="radio" name="rating" value="1" id="star1"><label for="star1">★</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comment</label>
+                    <textarea id="ratingComment" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Submit Review</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/booking.js"></script>
+    <script src="js/rating.js"></script>
+    <script>
+        // Custom filter function for this page
+        function filterBookings(status) {
+            const user = Auth.getCurrentUser();
+            if (!user) return;
+
+            const bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+            const userBookings = bookings.filter(b =>
+                user.role === 'customer' ? b.customerId === user.id : b.providerId === user.id
+            );
+
+            const container = document.getElementById('bookingsList');
+            container.innerHTML = '';
+
+            const filtered = status === 'all' ? userBookings : userBookings.filter(b => b.status === status);
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-muted">No bookings found.</p>';
+                return;
+            }
+
+            filtered.forEach(booking => {
+                const card = document.createElement('div');
+                card.className = `booking-card ${booking.status}`;
+                card.innerHTML = `
+                    <div class="flex-between mb-2">
+                        <h4>${booking.serviceName}</h4>
+                        <span class="status-badge ${booking.status}">${booking.status}</span>
+                    </div>
+                    <div class="booking-details text-muted">
+                        <p><i class="far fa-calendar"></i> ${booking.date} at ${booking.time}</p>
+                        <p><i class="fas fa-map-marker-alt"></i> ${booking.address}</p>
+                        <p class="mt-2"><strong class="text-primary">${App.formatCurrency(booking.price)}</strong></p>
+                        ${user.role === 'provider' ? `<p>Customer: ${booking.customerName}</p>` : `<p>Provider: ${booking.providerName}</p>`}
+                    </div>
+                    <div class="booking-actions mt-3">
+                        ${Booking.renderActions(booking, user.role)}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            // Update active button state
+            document.querySelectorAll('.btn-outline').forEach(btn => {
+                btn.classList.remove('active', 'btn-primary');
+                if (btn.innerText.toLowerCase() === status || (status === 'all' && btn.innerText === 'All')) {
+                    btn.classList.add('active', 'btn-primary');
+                }
+            });
+        }
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            filterBookings('all');
+        });
+    </script>
+</body>
+</html>
